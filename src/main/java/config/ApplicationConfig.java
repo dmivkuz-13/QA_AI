@@ -11,6 +11,8 @@ public record ApplicationConfig(
         String llmModel,
         String llmSystemPrompt,
         String openRouterApiKey,
+        String gigaChatAuthKey,
+        String gigachatAuthBaseUrl,
         Properties properties
 ) {
 
@@ -32,8 +34,8 @@ public record ApplicationConfig(
                 throw new RuntimeException("Не задано свойство application.url");
             }
             String llmProvider = properties.getProperty("llm.provider", DEFAULT_LLM_PROVIDER).trim().toLowerCase();
-            if (!"openrouter".equals(llmProvider) && !"ollama".equals(llmProvider)) {
-                throw new RuntimeException("llm.provider должен быть openrouter или ollama");
+            if (!"openrouter".equals(llmProvider) && !"ollama".equals(llmProvider) && !"gigachat".equals(llmProvider)) {
+                throw new RuntimeException("llm.provider должен быть openrouter или ollama или gigachat");
             }
             String defaultBaseUrl = "ollama".equals(llmProvider) ? DEFAULT_OLLAMA_BASE_URL : DEFAULT_OPENROUTER_BASE_URL;
             String defaultModel = "ollama".equals(llmProvider) ? DEFAULT_OLLAMA_MODEL : DEFAULT_OPENROUTER_MODEL;
@@ -41,6 +43,8 @@ public record ApplicationConfig(
             String llmModel = properties.getProperty("llm.model", defaultModel).trim();
             String llmSystemPrompt = properties.getProperty("llm.systemPrompt", DEFAULT_LLM_SYSTEM_PROMPT).trim();
             String openRouterApiKey = System.getenv("OPENROUTER_API_KEY");
+            String gigaChatAuthKey = System.getenv("GIGACHAT_AUTH_KEY");
+            String gigachatAuthBaseUrl = properties.getProperty("llm.gigachatAuthBaseUrl", "").trim();
             if (llmBaseUrl.isBlank()) {
                 throw new RuntimeException("Не задано свойство llm.baseUrl");
             }
@@ -53,6 +57,9 @@ public record ApplicationConfig(
             if ("openrouter".equals(llmProvider) && (openRouterApiKey == null || openRouterApiKey.isBlank())) {
                 throw new RuntimeException("Для llm.provider=openrouter должна быть установлена переменная OPENROUTER_API_KEY");
             }
+            if ("gigachat".equals(llmProvider) && (gigaChatAuthKey == null || gigaChatAuthKey.isBlank())) {
+                throw new RuntimeException("Для llm.provider=gigachat должна быть установлена переменная GIGACHAT_AUTH_KEY");
+            }
             return new ApplicationConfig(
                     url,
                     llmProvider,
@@ -60,6 +67,8 @@ public record ApplicationConfig(
                     llmModel,
                     llmSystemPrompt,
                     openRouterApiKey,
+                    gigaChatAuthKey,
+                    gigachatAuthBaseUrl,
                     properties
             );
         } catch (Exception e) {

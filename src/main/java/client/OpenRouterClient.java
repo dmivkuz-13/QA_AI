@@ -15,6 +15,8 @@ public class OpenRouterClient {
 
         private static final String OPENROUTER_CHAT_COMPLETIONS_PATH = "/api/v1/chat/completions";
         private static final String OLLAMA_CHAT_COMPLETIONS_PATH = "/v1/chat/completions";
+        private static final String GIGACHAT_CHAT_COMPLETIONS_PATH = "/v1/chat/completions";
+        private static final String GIGACHAT_AUTHORIZER_PATH = "/api/v1/auth/authorize";
 
         public static LlmResponse call(String prompt) {
             return call(prompt, LlmProfile.DEFAULT);
@@ -42,10 +44,20 @@ public class OpenRouterClient {
                     body.put("top_p", topP);
                 }
 
+                GigaChatTokenManager tokenManager = null;
+                if ("gigachat".equals(config.llmProvider())) {
+                    String authBaseUrl = config.gigachatAuthBaseUrl().isBlank()
+                            ? config.llmBaseUrl().replaceAll("/v1/.*", "").replaceAll("/v1$", "")
+                            : config.gigachatAuthBaseUrl();
+                    tokenManager = new GigaChatTokenManager(config.gigaChatAuthKey(), authBaseUrl);
+                }
+
+                String apiBaseUrl = config.llmBaseUrl().replaceAll("/$", "");
+
                 Response response = RestAssured.given()
-                        .baseUri(config.llmBaseUrl())
+                        .baseUri(apiBaseUrl)
                         .contentType(ContentType.JSON)
-                        .headers(buildHeaders(config))
+                        .headers(buildHeaders(config, tokenManager))
                         .body(body)
                         .post(chatCompletionsPath(config));
 
@@ -66,17 +78,29 @@ public class OpenRouterClient {
             }
         }
 
-        private static Map<String, String> buildHeaders(ApplicationConfig config) {
+        private static Map<String, String> buildHeaders(ApplicationConfig config, GigaChatTokenManager tokenManager) {
             if ("openrouter".equals(config.llmProvider())) {
                 return Map.of("Authorization", "Bearer " + config.openRouterApiKey());
+            }
+            if ("gigachat".equals(config.llmProvider())) {
+                String accessToken = tokenManager.getAccessToken();
+                return Map.of(
+                        "Authorization", "Bearer " + accessToken,
+                        "Content-Type", "application/json",
+                        "Accept", "application/json"
+                );
             }
             return Map.of();
         }
 
         private static String chatCompletionsPath(ApplicationConfig config) {
-            return "openrouter".equals(config.llmProvider())
-                    ? OPENROUTER_CHAT_COMPLETIONS_PATH
-                    : OLLAMA_CHAT_COMPLETIONS_PATH;
+            if ("openrouter".equals(config.llmProvider())) {
+                return OPENROUTER_CHAT_COMPLETIONS_PATH;
+            }
+            if ("gigachat".equals(config.llmProvider())) {
+                return GIGACHAT_CHAT_COMPLETIONS_PATH;
+            }
+            return OLLAMA_CHAT_COMPLETIONS_PATH;
         }
 
         public record LlmResponse(String rawBody, String content) {
