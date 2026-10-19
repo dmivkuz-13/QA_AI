@@ -1,17 +1,21 @@
 package util;
 
+import config.ApplicationConfig;
+
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 
 public class TestRunExecutor {
 
+    private static final String MVN = ApplicationConfig.load().mavenPath();
+
     public static String runTests() {
         FilesUtil.clearDirectory("target/allure-results");
-        return run("mvn", "-Dtest=org.demo.generated.GeneratedUiTest", "test");
+        return run(MVN, "-Dtest=org.demo.generated.GeneratedUiTest", "test");
     }
 
     public static String buildAllureReport() {
-        return run("mvn", "allure:report");
+        return run(MVN, "allure:report");
     }
 
     private static String run(String... command) {

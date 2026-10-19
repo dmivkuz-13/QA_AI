@@ -13,6 +13,7 @@ public record ApplicationConfig(
         String openRouterApiKey,
         String gigaChatAuthKey,
         String gigachatAuthBaseUrl,
+        String mavenPath,
         Properties properties
 ) {
 
@@ -45,6 +46,7 @@ public record ApplicationConfig(
             String openRouterApiKey = System.getenv("OPENROUTER_API_KEY");
             String gigaChatAuthKey = System.getenv("GIGACHAT_AUTH_KEY");
             String gigachatAuthBaseUrl = properties.getProperty("llm.gigachatAuthBaseUrl", "").trim();
+            String mavenPath = properties.getProperty("maven.path", "mvn").trim();
             if (llmBaseUrl.isBlank()) {
                 throw new RuntimeException("Не задано свойство llm.baseUrl");
             }
@@ -69,6 +71,7 @@ public record ApplicationConfig(
                     openRouterApiKey,
                     gigaChatAuthKey,
                     gigachatAuthBaseUrl,
+                    mavenPath,
                     properties
             );
         } catch (Exception e) {
